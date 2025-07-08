@@ -23,6 +23,7 @@
     "node": ">=22.11.0"
   },
   "engineStrict": true,
+  "sideEffects": false,
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
