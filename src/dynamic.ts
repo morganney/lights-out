@@ -2,7 +2,7 @@ import { colord, extend } from 'colord'
 import type { Plugin } from 'colord'
 import a11yPlugin from 'colord/plugins/a11y'
 
-type LightSwitchOptions = {
+type LightsOutOptions = {
   verbose?: boolean
   /**
    * The root element of the page where dark mode should be applied.
@@ -14,7 +14,7 @@ type LightSwitchOptions = {
   htmlFilterTags?: string[]
   preserveHoverBorderColor?: boolean
 }
-class LightSwitch {
+class LightsOut {
   #isEnabled = false
   #sheet = new CSSStyleSheet()
   #elements = new Set<HTMLElement>()
@@ -29,8 +29,8 @@ class LightSwitch {
   })
   #preserveHoverBorderColor = false
   #backgroundColor = ''
-  #markStart = 'lightSwitch:start'
-  #markEnd = 'lightSwitch:end'
+  #markStart = 'lightsOut:start'
+  #markEnd = 'lightsOut:end'
   #verbose = false
   #selector = ''
   #cssRules = ''
@@ -90,7 +90,7 @@ class LightSwitch {
     }
   `
 
-  constructor(options: LightSwitchOptions = {}) {
+  constructor(options: LightsOutOptions = {}) {
     const {
       cssStyleSheet,
       htmlFilterTags,
@@ -100,7 +100,7 @@ class LightSwitch {
     } = options
 
     if (!window) {
-      throw new Error('LightSwitch requires a window to be initialized.')
+      throw new Error('LightsOut requires a window to be initialized.')
     }
 
     this.#verbose = verbose
@@ -133,7 +133,7 @@ class LightSwitch {
         .map(rule => rule.cssText)
         .join('\n')
     } else {
-      this.#cssRules = LightSwitch.defaultCssRules.replace('*', this.#selector)
+      this.#cssRules = LightsOut.defaultCssRules.replace('*', this.#selector)
     }
 
     extend([a11yPlugin as unknown as Plugin])
@@ -143,7 +143,7 @@ class LightSwitch {
     // eslint-disable-next-line no-console
     console.log(
       `${root.tagName} styles updated in `,
-      performance.measure('lightSwitch:update', this.#markStart, this.#markEnd).duration,
+      performance.measure('lightsOut:update', this.#markStart, this.#markEnd).duration,
       'ms',
     )
   }
@@ -271,7 +271,7 @@ class LightSwitch {
         readableAttempts++
       }
 
-      if (el.dataset.lightSwitch !== 'true') {
+      if (el.dataset.lightsOut !== 'true') {
         const originalColor = el.style.color
         const originalBgColor = el.style.backgroundColor
 
@@ -300,14 +300,14 @@ class LightSwitch {
 
         el.style.setProperty('color', colored.toHex())
         el.style.setProperty('background-color', darkBgColor)
-        el.dataset.lightSwitch = 'true'
+        el.dataset.lightsOut = 'true'
       }
     }
   }
 
   #undarken(el: HTMLElement) {
-    if (el.dataset.lightSwitch === 'true') {
-      delete el.dataset.lightSwitch
+    if (el.dataset.lightsOut === 'true') {
+      delete el.dataset.lightsOut
       if (el.dataset.originalColor) {
         el.style.setProperty('color', el.dataset.originalColor)
         delete el.dataset.originalColor
@@ -362,7 +362,7 @@ class LightSwitch {
     }
   }
 
-  off() {
+  enable() {
     this.#isEnabled = true
     this.#pageObserver.observe(this.#pageRoot, {
       childList: true,
@@ -373,7 +373,7 @@ class LightSwitch {
     this.#update(this.#pageRoot)
   }
 
-  on() {
+  disable() {
     this.#isEnabled = false
     this.#walk(this.#pageRoot)
     this.#sheet.replaceSync('')
@@ -388,4 +388,4 @@ class LightSwitch {
   }
 }
 
-export { LightSwitch }
+export { LightsOut }

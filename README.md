@@ -1,4 +1,4 @@
-# Light Switch
+# Lights Out
 
 Turn your web app's lights off.
 
