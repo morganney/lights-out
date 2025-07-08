@@ -10,8 +10,15 @@ type LightsOutOptions = {
    * (although document.documentElement is also supported).
    */
   pageRoot?: HTMLElement
+  /* The default alpha value for the page root background color. */
+  pageRootAlpha?: number
+  /* A CSSStyleSheet to use for the dark mode styles. */
   cssStyleSheet?: CSSStyleSheet
-  htmlFilterTags?: string[]
+  /**
+   * An array of selectors to filter out from dark mode.
+   * This is useful for excluding elements that should not be darkened.
+   */
+  filterSelectors?: string[]
   preserveHoverBorderColor?: boolean
 }
 class LightsOut {
@@ -24,6 +31,7 @@ class LightsOut {
   #hoverColorRules = new Map<string, CSSRule>()
   #htmlFilterSet: Set<string> = new Set([])
   #pageRoot = document.body
+  #pageRootAlpha = 1
   #pageObserver = new MutationObserver(() => {
     this.#update(this.#pageRoot)
   })
@@ -89,13 +97,30 @@ class LightsOut {
       filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(70%);
     }
   `
+  static defaultFilterSelectors = [
+    'html',
+    'head',
+    'title',
+    'meta',
+    'script',
+    'style',
+    'link',
+    'iframe',
+    'svg',
+    'img',
+    'canvas',
+    'video',
+    'audio',
+  ]
 
   constructor(options: LightsOutOptions = {}) {
     const {
       cssStyleSheet,
-      htmlFilterTags,
+      filterSelectors,
+
       verbose = false,
       pageRoot = this.#pageRoot,
+      pageRootAlpha = this.#pageRootAlpha,
       preserveHoverBorderColor = this.#preserveHoverBorderColor,
     } = options
 
@@ -105,24 +130,11 @@ class LightsOut {
 
     this.#verbose = verbose
     this.#pageRoot = pageRoot
+    this.#pageRootAlpha = pageRootAlpha
     this.#preserveHoverBorderColor = preserveHoverBorderColor
-    this.#htmlFilterSet = Array.isArray(htmlFilterTags)
-      ? new Set(htmlFilterTags.map(tag => tag.toLowerCase()))
-      : new Set([
-          'html',
-          'head',
-          'title',
-          'meta',
-          'script',
-          'style',
-          'link',
-          'iframe',
-          'svg',
-          'img',
-          'canvas',
-          'video',
-          'audio',
-        ])
+    this.#htmlFilterSet = Array.isArray(filterSelectors)
+      ? new Set(filterSelectors.map(tag => tag.toLowerCase()))
+      : new Set(LightsOut.defaultFilterSelectors)
     this.#selector = Array.from(this.#htmlFilterSet)
       .filter(tag => !tag.startsWith(':'))
       .map(tag => `:not(${tag})`)
@@ -251,7 +263,8 @@ class LightsOut {
 
     if (!Array.from(this.#htmlFilterSet).some(selector => el.matches(selector))) {
       if (tagName === this.#pageRoot.tagName.toLowerCase()) {
-        darkBgColor = bgColord.darken(0.9).toHex()
+        // Ensure the page root has a non-transparent background color.
+        darkBgColor = bgColord.darken(0.9).alpha(this.#pageRootAlpha).toHex()
 
         if (!this.#backgroundColor) {
           this.#backgroundColor = darkBgColor

@@ -10,3 +10,21 @@ Turn your web app's lights off.
 ## What is this?
 
 An exploration into dynamic dark mode. Some applications are large, old and burdened by a lack of standards which makes supporting a dark mode theme harder than it needs to be. This project attempts to remedy that by providing an automatic dark mode while the hard work of refactoring the codebase, so a more performant and standard approach to themeing can be developed, is underway.
+
+## Example
+
+```
+npm install lights-out
+```
+
+```ts
+import { LightsOut } from 'lights-out'
+```
+
+> [!IMPORTANT]  
+> A browser `window` is required, i.e. no SSR.
+
+```ts
+// After DOMContentLoaded
+new LightsOut().enable()
+```
