@@ -1,6 +1,6 @@
 {
   "name": "lights-out",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Automatic dark mode for your web app.",
   "type": "module",
   "main": "dist/dynamic.js",
@@ -23,6 +23,7 @@
     "node": ">=22.11.0"
   },
   "engineStrict": true,
+  "sideEffects": false,
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

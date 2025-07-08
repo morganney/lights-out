@@ -19,6 +19,8 @@ type LightsOutOptions = {
    * This is useful for excluding elements that should not be darkened.
    */
   filterSelectors?: string[]
+  /* MutationObserver attribute filter. `style` not supported. */
+  attributeFilter?: string[]
   preserveHoverBorderColor?: boolean
 }
 class LightsOut {
@@ -42,6 +44,11 @@ class LightsOut {
   #verbose = false
   #selector = ''
   #cssRules = ''
+  #colorValueRgx = /rgba?\([\d,.\s]*\)|hsla?\([\d,.\s]*\)|#[A-Fa-f0-9]{3,8}/g
+  #mutationObserverOptions: MutationObserverInit = {
+    childList: true,
+    subtree: true,
+  }
 
   static defaultCssRules = `
     ::-webkit-scrollbar {
@@ -117,7 +124,7 @@ class LightsOut {
     const {
       cssStyleSheet,
       filterSelectors,
-
+      attributeFilter,
       verbose = false,
       pageRoot = this.#pageRoot,
       pageRootAlpha = this.#pageRootAlpha,
@@ -148,6 +155,15 @@ class LightsOut {
       this.#cssRules = LightsOut.defaultCssRules.replace('*', this.#selector)
     }
 
+    if (Array.isArray(attributeFilter)) {
+      this.#mutationObserverOptions = {
+        ...this.#mutationObserverOptions,
+        attributes: true,
+        // Ignore style attribute to prevent infinite observing loop.
+        attributeFilter: attributeFilter.filter(attr => attr !== 'style'),
+      }
+    }
+
     extend([a11yPlugin as unknown as Plugin])
   }
 
@@ -168,10 +184,7 @@ class LightsOut {
     this.#pageRoot = root
     if (this.#isEnabled) {
       this.#pageObserver.disconnect()
-      this.#pageObserver.observe(this.#pageRoot, {
-        childList: true,
-        subtree: true,
-      })
+      this.#pageObserver.observe(this.#pageRoot, this.#mutationObserverOptions)
     }
   }
 
@@ -192,10 +205,7 @@ class LightsOut {
               }
             })
           })
-          observer.observe(node.shadowRoot, {
-            childList: true,
-            subtree: true,
-          })
+          observer.observe(node.shadowRoot, this.#mutationObserverOptions)
           this.#observers.set(node.shadowRoot.host, observer)
         }
 
@@ -311,6 +321,28 @@ class LightsOut {
           }
         }
 
+        if (
+          computedStyle.backgroundImage !== 'none' &&
+          /-gradient\(/.test(computedStyle.backgroundImage)
+        ) {
+          const bgImg = computedStyle.backgroundImage.replaceAll(
+            this.#colorValueRgx,
+            match => {
+              const color = colord(match)
+              return color.isDark()
+                ? color.lighten(0.7).toHex()
+                : color.darken(0.7).toHex()
+            },
+          )
+
+          if (el.style.backgroundImage) {
+            el.dataset.originalBgImage = el.style.backgroundImage
+          }
+
+          el.style.setProperty('background-image', bgImg)
+          el.dataset.lightsOutGradient = 'true'
+        }
+
         el.style.setProperty('color', colored.toHex())
         el.style.setProperty('background-color', darkBgColor)
         el.dataset.lightsOut = 'true'
@@ -321,23 +353,37 @@ class LightsOut {
   #undarken(el: HTMLElement) {
     if (el.dataset.lightsOut === 'true') {
       delete el.dataset.lightsOut
+
       if (el.dataset.originalColor) {
         el.style.setProperty('color', el.dataset.originalColor)
         delete el.dataset.originalColor
       } else {
         el.style.removeProperty('color')
       }
+
       if (el.dataset.originalBgColor) {
         el.style.setProperty('background-color', el.dataset.originalBgColor)
         delete el.dataset.originalBgColor
       } else {
         el.style.removeProperty('background-color')
       }
+
       if (el.dataset.originalBorderColor) {
         el.style.setProperty('border-color', el.dataset.originalBorderColor)
         delete el.dataset.originalBorderColor
       } else {
         el.style.removeProperty('border-color')
+      }
+
+      if (el.dataset.lightsOutGradient) {
+        delete el.dataset.lightsOutGradient
+
+        if (el.dataset.originalBgImage) {
+          el.style.setProperty('background-image', el.dataset.originalBgImage)
+          delete el.dataset.originalBgImage
+        } else {
+          el.style.removeProperty('background-image')
+        }
       }
     }
   }
@@ -377,10 +423,7 @@ class LightsOut {
 
   enable() {
     this.#isEnabled = true
-    this.#pageObserver.observe(this.#pageRoot, {
-      childList: true,
-      subtree: true,
-    })
+    this.#pageObserver.observe(this.#pageRoot, this.#mutationObserverOptions)
     this.#sheet.replaceSync(this.#cssRules)
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, this.#sheet]
     this.#update(this.#pageRoot)
