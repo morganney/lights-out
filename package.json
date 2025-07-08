@@ -1,5 +1,5 @@
 {
-  "name": "light-switch",
+  "name": "lights-out",
   "version": "1.0.0-alpha.0",
   "description": "Automatic dark mode for your web app.",
   "type": "module",
@@ -43,10 +43,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/morganney/light-switch.git"
+    "url": "git+https://github.com/morganney/lights-out.git"
   },
   "bugs": {
-    "url": "https://github.com/morganney/light-switch/issues"
+    "url": "https://github.com/morganney/lights-out/issues"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
