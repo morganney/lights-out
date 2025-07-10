@@ -442,6 +442,18 @@ class LightsOut {
     })
     this.#clear()
   }
+
+  toggle(force?: boolean) {
+    if (force === undefined) {
+      force = !this.#isEnabled
+    }
+
+    if (force) {
+      this.enable()
+    } else {
+      this.disable()
+    }
+  }
 }
 
 export { LightsOut }

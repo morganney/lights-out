@@ -1,6 +1,6 @@
 {
   "name": "lights-out",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "Automatic dark mode for your web app.",
   "type": "module",
   "main": "dist/dynamic.js",
